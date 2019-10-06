@@ -10,7 +10,10 @@ namespace Slic3r {
 class FillSmooth : public Fill
 {
 public:
-    FillSmooth() {
+
+    FillSmooth(const PrintRegionConfig* config)
+    : config(config)
+    {
         nbPass = 2;
         anglePass[0] = 0;
         anglePass[1] = float(M_PI/2);
@@ -21,15 +24,18 @@ public:
         rolePass[0] = erSolidInfill;
         rolePass[1] = erTopSolidInfill;
         rolePass[2] = erSolidInfill;
-        percentWidth[0] = 0.9;
-        percentWidth[1] = 2;
+        percentWidth[0] = 1.0;
+        percentWidth[1] = 1.0;
         percentWidth[2] = 1.0;
-        percentFlow[0] = 0.7;
-        percentFlow[1] = 0.3;
+        percentFlow[0] = 1.0;
+        percentFlow[1] = 1.0;
         percentFlow[2] = 0.0;
         double extrusionMult = 1.0;
-        percentFlow[0] *= extrusionMult;
-        percentFlow[1] *= extrusionMult;
+	if(config)
+	{
+	  percentFlow[0] *= config->top_infill_flow_ratio;
+	  percentFlow[1] *= config->ironing_flow_ratio;
+	}
         percentFlow[2] *= extrusionMult;
         has_overlap[0] = false;
         has_overlap[1] = true;
@@ -41,6 +47,7 @@ public:
     virtual void fill_surface_extrusion(const Surface *surface, const FillParams &params, ExtrusionEntitiesPtr &out) override;
     
 protected:
+    const PrintRegionConfig* config;
     int nbPass=2;
     double percentWidth[3];
     double percentFlow[3];
@@ -48,6 +55,8 @@ protected:
     bool has_overlap[3];
     ExtrusionRole rolePass[3];
     InfillPattern fillPattern[3];
+    float top_infill_flow_ratio;
+    float ironing_flow_ratio;
 
     void performSingleFill(const int idx, ExtrusionEntityCollection &eecroot, const Surface &srf_source,
         const FillParams &params, const double volume);
@@ -59,7 +68,9 @@ protected:
 class FillSmoothTriple : public FillSmooth
 {
 public:
-    FillSmoothTriple() {
+    FillSmoothTriple(const PrintRegionConfig* config)
+    : FillSmooth(config)
+    {
         nbPass = 1; //3
         anglePass[0] = 0;
         anglePass[1] = float(M_PI / 2);
@@ -92,7 +103,9 @@ public:
 class FillSmoothHilbert : public FillSmooth
 {
 public:
-    FillSmoothHilbert() {
+    FillSmoothHilbert(const PrintRegionConfig* config)
+    : FillSmooth(config)
+    {
         nbPass = 2;
         anglePass[0] = 0;
         anglePass[1] = float(M_PI / 4);
